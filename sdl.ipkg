@@ -7,5 +7,4 @@ opts = "-p effects"
 makefile = MakefileSDLC
 
 objs = sdlrun.o, sdlrun.h
-libs = SDL, SDL_gfx
-
+libs = SDL2, SDL2_gfx

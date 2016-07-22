@@ -1,21 +1,26 @@
 #include <stdio.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_gfxPrimitives.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 #include <idris_rts.h>
 
-SDL_Surface* graphicsInit(int xsize, int ysize) {
-    SDL_Surface *screen;
-
-    if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO) <0 )
-    {
+SDL_Window* graphicsInit(int xsize, int ysize) {
+    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
 	printf("Unable to init SDL: %s\n", SDL_GetError());
 	return NULL;
     }
 
+    SDL_Window *screen = SDL_CreateWindow(
+      "My Game Window",
+      SDL_WINDOWPOS_CENTERED,
+      SDL_WINDOWPOS_CENTERED,
+      640, 480,
+      SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
+/*
     screen = SDL_SetVideoMode(xsize, ysize, 32,
                               SDL_HWSURFACE | SDL_DOUBLEBUF);
-    if (screen==NULL) {
+*/
+    if (screen == NULL) {
 	printf("Unable to init SDL: %s\n", SDL_GetError());
 	return NULL;
     }
