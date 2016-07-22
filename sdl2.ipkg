@@ -1,0 +1,13 @@
+package sdl2
+
+pkgs = effects
+
+sourcedir = src
+modules = Graphics.SDL2
+        , Graphics.Config
+        , Effect.SDL
+
+makefile = MakefileSDLC
+
+objs = sdlrun.o
+     , sdlrun.h

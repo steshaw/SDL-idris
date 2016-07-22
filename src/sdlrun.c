@@ -1,70 +1,87 @@
-#include <stdio.h>
-#include <SDL2/SDL.h>
+#include "sdlrun.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
 
+#include <stdio.h>
 #include <idris_rts.h>
 
-SDL_Window* graphicsInit(int xsize, int ysize) {
-    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-	printf("Unable to init SDL: %s\n", SDL_GetError());
-	return NULL;
-    }
+SDL_Renderer* graphicsInit(int width, int height) {
+  if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+    fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+    //return NULL;
+    SDL_Quit();
+    exit(1);
+  }
 
-    SDL_Window *screen = SDL_CreateWindow(
-      "My Game Window",
-      SDL_WINDOWPOS_CENTERED,
-      SDL_WINDOWPOS_CENTERED,
-      640, 480,
-      SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
-/*
-    screen = SDL_SetVideoMode(xsize, ysize, 32,
-                              SDL_HWSURFACE | SDL_DOUBLEBUF);
-*/
-    if (screen == NULL) {
-	printf("Unable to init SDL: %s\n", SDL_GetError());
-	return NULL;
-    }
+  SDL_Window *window = SDL_CreateWindow(
+    "My Game Window",
+    SDL_WINDOWPOS_CENTERED,
+    SDL_WINDOWPOS_CENTERED,
+    width, height,
+    0
+  );
+  if (window == NULL) {
+    printf("Unable to create window: %s\n", SDL_GetError());
+   // return NULL;
+    SDL_Quit();
+    exit(1);
+  }
 
-    return screen;
+  SDL_Renderer *renderer = SDL_CreateRenderer(
+    window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+  );
+  if (renderer == NULL) {
+    SDL_DestroyWindow(window);
+    fprintf(stderr, "Unable to create renderer: %s\n", SDL_GetError());
+    SDL_Quit();
+    exit(1);
+  }
+
+  return renderer;
 }
 
-void filledRect(void *s_in,
-	        int x, int y, int w, int h,
-	        int r, int g, int b, int a) 
+void filledRect(void *r_in,
+                int x, int y, int w, int h,
+                int r, int g, int b, int a)
 {
-    SDL_Surface* s = (SDL_Surface*)s_in;
-    Uint32 colour 
-	= SDL_MapRGBA(s->format, (Uint8)r, (Uint8)g, (Uint8)b, (Uint8) a);
+    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
+    int rc1 = SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    if (rc1 != 0) {
+      fprintf(stderr, "SDL_SetRenderDrawColor failed: %s\n", SDL_GetError());
+      exit(1);
+    }
     SDL_Rect rect = { x, y, w, h };
-    SDL_FillRect(s, &rect, colour);
+    int rc2 = SDL_RenderFillRect(renderer, &rect);
+    if (rc2 != 0) {
+      fprintf(stderr, "SDL_RenderFillRect failed: %s\n", SDL_GetError());
+      exit(1);
+    }
 }
 
-void filledEllipse(void* s_in,
-		   int x, int y, int rx, int ry,
-                   int r, int g, int b, int a) 
+void filledEllipse(void* r_in,
+                   int x, int y, int rx, int ry,
+                   int r, int g, int b, int a)
 {
-    SDL_Surface* s = (SDL_Surface*)s_in;
-    filledEllipseRGBA(s, x, y, rx, ry, r, g, b, a);
+    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
+    filledEllipseRGBA(renderer, x, y, rx, ry, r, g, b, a);
 }
 
-void drawLine(void* s_in,
-	      int x, int y, int ex, int ey,
-	      int r, int g, int b, int a) 
+void drawLine(void* r_in,
+              int x, int y, int ex, int ey,
+              int r, int g, int b, int a)
 {
-    SDL_Surface* s = (SDL_Surface*)s_in;
-    lineRGBA(s, x, y, ex, ey, r, g, b, a);
+    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
+    lineRGBA(renderer, x, y, ex, ey, r, g, b, a);
 }
 
-void flipBuffers(void* s_in) {
-    SDL_Surface* s = (SDL_Surface*)s_in;
-    SDL_Flip(s);
+void flipBuffers(void* r_in) {
+    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
+    SDL_RenderPresent(renderer);
 }
 
-void* startSDL(int x, int y) {
-    SDL_Surface *s = graphicsInit(x, y);
-//    drawRect(s, 100, 100, 50, 50, 255, 0, 0, 128);
-//    while(1) {
-    return (void*)s;
+void* startSDL(int w, int h) {
+    SDL_Renderer *renderer = graphicsInit(w, h);
+    //return (void*)renderer;
+    return renderer;
 }
 
 VAL MOTION(VM* vm, int x, int y, int relx, int rely) {
@@ -90,12 +107,15 @@ VAL BUTTON(VM* vm, int tag, int b, int x, int y) {
     case SDL_BUTTON_RIGHT:
         idris_constructor(button, vm, 2, 0, 0);
         break;
+// TODO: The handling of mouse wheel events has changed in SDL2.
+/*
     case SDL_BUTTON_WHEELUP:
         idris_constructor(button, vm, 3, 0, 0);
         break;
     case SDL_BUTTON_WHEELDOWN:
         idris_constructor(button, vm, 4, 0, 0);
         break;
+*/
     default:
         idris_constructor(button, vm, 0, 0, 0);
         break;
@@ -117,93 +137,94 @@ VAL RESIZE(VM* vm, int w, int h) {
     idris_setConArg(m, 1, MKINT((intptr_t)h));
     return m;
 }
-VAL KEY(VM* vm, int tag, SDLKey key) {
+
+VAL KEY(VM* vm, int tag, SDL_Keycode key) {
     VAL k;
 
     switch(key) {
     case SDLK_UP:
         idris_constructor(k, vm, 0, 0, 0);
-	break;
+        break;
     case SDLK_DOWN:
         idris_constructor(k, vm, 1, 0, 0);
-	break;
+        break;
     case SDLK_LEFT:
         idris_constructor(k, vm, 2, 0, 0);
-	break;
+        break;
     case SDLK_RIGHT:
         idris_constructor(k, vm, 3, 0, 0);
-	break;
+        break;
     case SDLK_ESCAPE:
         idris_constructor(k, vm, 4, 0, 0);
-	break;
+        break;
     case SDLK_SPACE:
         idris_constructor(k, vm, 5, 0, 0);
-	break;
+        break;
     case SDLK_TAB:
         idris_constructor(k, vm, 6, 0, 0);
-	break;
+        break;
     case SDLK_F1:
         idris_constructor(k, vm, 7, 0, 0);
-	break;
+        break;
     case SDLK_F2:
         idris_constructor(k, vm, 8, 0, 0);
-	break;
+        break;
     case SDLK_F3:
         idris_constructor(k, vm, 9, 0, 0);
-	break;
+        break;
     case SDLK_F4:
         idris_constructor(k, vm, 10, 0, 0);
-	break;
+        break;
     case SDLK_F5:
         idris_constructor(k, vm, 11, 0, 0);
-	break;
+        break;
     case SDLK_F6:
         idris_constructor(k, vm, 12, 0, 0);
-	break;
+        break;
     case SDLK_F7:
         idris_constructor(k, vm, 13, 0, 0);
-	break;
+        break;
     case SDLK_F8:
         idris_constructor(k, vm, 14, 0, 0);
-	break;
+        break;
     case SDLK_F9:
         idris_constructor(k, vm, 15, 0, 0);
-	break;
+        break;
     case SDLK_F10:
         idris_constructor(k, vm, 16, 0, 0);
-	break;
+        break;
     case SDLK_F11:
         idris_constructor(k, vm, 17, 0, 0);
-	break;
+        break;
     case SDLK_F12:
         idris_constructor(k, vm, 18, 0, 0);
-	break;
+        break;
     case SDLK_F13:
         idris_constructor(k, vm, 19, 0, 0);
-	break;
+        break;
     case SDLK_F14:
         idris_constructor(k, vm, 20, 0, 0);
-	break;
+        break;
     case SDLK_F15:
         idris_constructor(k, vm, 21, 0, 0);
-	break;
+        break;
     case SDLK_LSHIFT:
         idris_constructor(k, vm, 22, 0, 0);
-	break;
+        break;
     case SDLK_RSHIFT:
         idris_constructor(k, vm, 23, 0, 0);
-	break;
+        break;
     case SDLK_LCTRL:
         idris_constructor(k, vm, 24, 0, 0);
-	break;
+        break;
     case SDLK_RCTRL:
         idris_constructor(k, vm, 25, 0, 0);
-	break;
+        break;
     default:
         idris_constructor(k, vm, 26, 1, 0);
         // safe because there's no further allocation.
         idris_setConArg(k, 0, MKINT((intptr_t)key));
-	break;
+        break;
     }
 
     VAL event;
@@ -221,13 +242,12 @@ data Event = KeyDown Key
            | MouseMotion Int Int Int Int
            | MouseButtonDown Button Int Int
            | MouseButtonUp Button Int Int
-	   | AppQuit
+           | AppQuit
 
 pollEvent : IO (Maybe Event)
 */
 
-void* pollEvent(VM* vm) 
-{
+void* pollEvent(VM* vm) {
     VAL idris_event;
 
     SDL_Event event; // = (SDL_Event *) GC_MALLOC(sizeof(SDL_Event));
@@ -239,14 +259,14 @@ void* pollEvent(VM* vm)
         idris_constructor(idris_event, vm, 0, 0, 0); // Nothing
     }
     else {
-	VAL ievent = NULL;
-	switch(event.type) {
-	case SDL_KEYDOWN:
-	    ievent = KEY(vm, 0, event.key.keysym.sym);
-	    break;
-	case SDL_KEYUP:
-	    ievent = KEY(vm, 1, event.key.keysym.sym);
-	    break;
+        VAL ievent = NULL;
+        switch(event.type) {
+        case SDL_KEYDOWN:
+            ievent = KEY(vm, 0, event.key.keysym.sym);
+            break;
+        case SDL_KEYUP:
+            ievent = KEY(vm, 1, event.key.keysym.sym);
+            break;
         case SDL_MOUSEMOTION:
             ievent = MOTION(vm, event.motion.x, event.motion.y,
                                 event.motion.xrel, event.motion.yrel);
@@ -259,17 +279,19 @@ void* pollEvent(VM* vm)
             ievent = BUTTON(vm, 4, event.button.button,
                                 event.button.x, event.button.y);
             break;
-        case SDL_VIDEORESIZE:
-            ievent = RESIZE(vm, event.resize.w, event.resize.h);
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+              ievent = RESIZE(vm, event.window.data1, event.window.data2);
+            }
             break;
-	case SDL_QUIT:
-	    idris_constructor(ievent, vm, 6, 0, 0);
-	    break;
-	default:
-	    idris_constructor(idris_event, vm, 0, 0, 0); // Nothing
+        case SDL_QUIT:
+            idris_constructor(ievent, vm, 6, 0, 0);
+            break;
+        default:
+            idris_constructor(idris_event, vm, 0, 0, 0); // Nothing
             idris_doneAlloc(vm);
             return idris_event;
-	}
+        }
         idris_constructor(idris_event, vm, 1, 1, 0);
         idris_setConArg(idris_event, 0, ievent); // Just ievent
     }
@@ -299,4 +321,3 @@ int main(int argc, char* argv[]) {
     }
 }
 */
-

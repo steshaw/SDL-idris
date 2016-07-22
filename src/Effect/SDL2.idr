@@ -1,10 +1,10 @@
-module Effect.SDL
+module Effect.SDL2
 
 import Effects
-import public Graphics.SDL
+import public Graphics.SDL2
 
-Srf : Type
-Srf = SDLSurface
+Rdr : Type
+Srf = Renderer
 
 data Colour = MkCol Int Int Int Int
 
@@ -33,12 +33,12 @@ magenta : Colour
 magenta = MkCol 255 0 255 255
 
 data Sdl : Effect where
-     Initialise : Int -> Int -> Sdl () () (\v => Srf)
-     Quit : Sdl () Srf (\v => ())
-     Flip : Sdl () Srf (\v => Srf)
+     Initialise : Int -> Int -> Sdl () () (\v => Rdr)
+     Quit : Sdl () Rdr (\v => ())
+     Flip : Sdl () Rdr (\v => Rdr)
      Poll : Sdl (Maybe Event) a (\v => a)
 
-     WithSurface : (Srf -> IO a) -> Sdl a Srf (\v => Srf)
+     WithSurface : (Rdr -> IO a) -> Sdl a Rdr (\v => Rdr)
 
 Handler Sdl IO where
      handle () (Initialise x y) k = do srf <- startSDL x y; k () srf

@@ -1,55 +1,53 @@
-module Graphics.SDL
+module Graphics.SDL2
 
 import Graphics.Config
 
 %include C "sdlrun.h"
-%include C "SDL/SDL.h"
-%link C "sdlrun.o"
-%lib C "SDL_gfx"
+%link C    "sdlrun.o"
 
 -- Set up a window
 
 export 
-data SDLSurface = MkSurface Ptr
+data Renderer = MkRenderer Ptr
 
 export
-startSDL : Int -> Int -> IO SDLSurface
-startSDL x y = do ptr <- do_startSDL
-		  return (MkSurface ptr)
+init : Int -> Int -> IO Renderer
+init x y = do ptr <- do_startSDL
+              return (MkRenderer ptr)
   where do_startSDL = foreign FFI_C "startSDL" (Int -> Int -> IO Ptr) x y
 
 export
-endSDL : IO ()
-endSDL = foreign FFI_C "SDL_Quit" (IO ())
+quit : IO ()
+quit = foreign FFI_C "SDL_Quit" (IO ())
 
 export
-flipBuffers : SDLSurface -> IO ();
-flipBuffers (MkSurface ptr) 
+flipBuffers : Renderer -> IO ()
+flipBuffers (MkRenderer ptr) 
      = foreign FFI_C "flipBuffers" (Ptr -> IO ()) ptr
 
 
 -- Some drawing primitives
 
 export
-filledRect : SDLSurface -> Int -> Int -> Int -> Int ->
+filledRect : Renderer -> Int -> Int -> Int -> Int ->
                            Int -> Int -> Int -> Int -> IO ()
-filledRect (MkSurface ptr) x y w h r g b a 
+filledRect (MkRenderer ptr) x y w h r g b a 
       = foreign FFI_C "filledRect"
            (Ptr -> Int -> Int -> Int -> Int ->
             Int -> Int -> Int -> Int -> IO ()) ptr x y w h r g b a
 
 export
-filledEllipse : SDLSurface -> Int -> Int -> Int -> Int ->
+filledEllipse : Renderer -> Int -> Int -> Int -> Int ->
                               Int -> Int -> Int -> Int -> IO ()
-filledEllipse (MkSurface ptr) x y rx ry r g b a 
+filledEllipse (MkRenderer ptr) x y rx ry r g b a 
       = foreign FFI_C "filledEllipse"
            (Ptr -> Int -> Int -> Int -> Int ->
             Int -> Int -> Int -> Int -> IO ()) ptr x y rx ry r g b a
 
 export
-drawLine : SDLSurface -> Int -> Int -> Int -> Int ->
+drawLine : Renderer -> Int -> Int -> Int -> Int ->
                          Int -> Int -> Int -> Int -> IO ()
-drawLine (MkSurface ptr) x y ex ey r g b a 
+drawLine (MkRenderer ptr) x y ex ey r g b a 
       = foreign FFI_C "drawLine"
            (Ptr -> Int -> Int -> Int -> Int ->
             Int -> Int -> Int -> Int -> IO ()) ptr x y ex ey r g b a
@@ -57,11 +55,11 @@ drawLine (MkSurface ptr) x y ex ey r g b a
 -- TODO: More keys still to add... careful to do the right mappings in
 -- KEY in sdlrun.c
 
-export
+public export
 data Key = KeyUpArrow
          | KeyDownArrow
-	 | KeyLeftArrow
-	 | KeyRightArrow
+         | KeyLeftArrow
+         | KeyRightArrow
          | KeyEsc
          | KeySpace
          | KeyTab
@@ -84,7 +82,7 @@ data Key = KeyUpArrow
          | KeyRShift
          | KeyLCtrl
          | KeyRCtrl
-	 | KeyAny Char
+         | KeyAny Char
 
 Eq Key where
   KeyUpArrow    == KeyUpArrow     = True
@@ -120,7 +118,7 @@ Eq Key where
   (KeyAny x)    == (KeyAny y)     = x == y
   _             == _              = False
 
-export
+public export
 data Button = Left | Middle | Right | WheelUp | WheelDown
 
 Eq Button where
@@ -131,14 +129,14 @@ Eq Button where
   WheelDown == WheelDown = True
   _ == _ = False
 
-export
+public export
 data Event = KeyDown Key
            | KeyUp Key
            | MouseMotion Int Int Int Int
            | MouseButtonDown Button Int Int
            | MouseButtonUp Button Int Int
            | Resize Int Int
-	   | AppQuit
+           | AppQuit
 
 Eq Event where
   (KeyDown x) == (KeyDown y) = x == y
@@ -158,4 +156,3 @@ pollEvent
     = do MkRaw e <- 
             foreign FFI_C "pollEvent" (Ptr -> IO (Raw (Maybe Event))) prim__vm
          return e
-
