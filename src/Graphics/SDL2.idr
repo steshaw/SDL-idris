@@ -7,8 +7,11 @@ import Graphics.Config
 
 -- Set up a window
 
-export 
+export
 data Renderer = MkRenderer Ptr
+
+export
+data Surface = MkSurface Ptr
 
 export
 init : Int -> Int -> IO Renderer

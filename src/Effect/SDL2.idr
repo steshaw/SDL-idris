@@ -4,7 +4,7 @@ import Effects
 import public Graphics.SDL2
 
 Rdr : Type
-Srf = Renderer
+Rdr = Renderer
 
 data Colour = MkCol Int Int Int Int
 
@@ -38,21 +38,21 @@ data Sdl : Effect where
      Flip : Sdl () Rdr (\v => Rdr)
      Poll : Sdl (Maybe Event) a (\v => a)
 
-     WithSurface : (Rdr -> IO a) -> Sdl a Rdr (\v => Rdr)
+     WithRenderer : (Rdr -> IO a) -> Sdl a Rdr (\v => Rdr)
 
 Handler Sdl IO where
-     handle () (Initialise x y) k = do srf <- startSDL x y; k () srf
-     handle s Quit k = do endSDL; k () ()
+     handle () (Initialise x y) k = do srf <- SDL2.init x y; k () srf
+     handle s Quit k = do SDL2.quit; k () ()
 
      handle s Flip k = do flipBuffers s; k () s
      handle s Poll k = do x <- pollEvent; k x s
-     handle s (WithSurface f) k = do r <- f s; k r s 
+     handle s (WithRenderer f) k = do r <- f s; k r s 
 
 SDL : Type -> EFFECT
 SDL res = MkEff res Sdl
 
 SDL_ON : EFFECT
-SDL_ON = SDL SDLSurface
+SDL_ON = SDL SDL2.Renderer
 
 initialise : Int -> Int -> { [SDL ()] ==> [SDL_ON] } Eff () 
 initialise x y = call $ Initialise x y
@@ -66,19 +66,17 @@ flip = call Flip
 poll : { [SDL_ON] } Eff (Maybe Event) 
 poll = call Poll
 
-getSurface : { [SDL_ON] } Eff SDLSurface
-getSurface = call $ WithSurface (\s => return s)
+getRenderer : { [SDL_ON] } Eff SDL2.Renderer
+getRenderer = call $ WithRenderer (\s => return s)
 
 rectangle : Colour -> Int -> Int -> Int -> Int -> { [SDL_ON] } Eff () 
 rectangle (MkCol r g b a) x y w h 
-     = call $ WithSurface (\s => filledRect s x y w h r g b a)
+     = call $ WithRenderer (\s => filledRect s x y w h r g b a)
 
 ellipse : Colour -> Int -> Int -> Int -> Int -> { [SDL_ON] } Eff () 
 ellipse (MkCol r g b a) x y rx ry 
-     = call $ WithSurface (\s => filledEllipse s x y rx ry r g b a)
+     = call $ WithRenderer (\s => filledEllipse s x y rx ry r g b a)
 
 line : Colour -> Int -> Int -> Int -> Int -> { [SDL_ON] } Eff () 
 line (MkCol r g b a) x y ex ey 
-     = call $ WithSurface (\s => drawLine s x y ex ey r g b a)
-
-
+     = call $ WithRenderer (\s => drawLine s x y ex ey r g b a)
