@@ -1,19 +1,16 @@
 #include "sdl2.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
-
 #include <stdio.h>
-#include <idris_rts.h>
 
-SDL_Renderer* graphicsInit(int width, int height) {
+SDL_Renderer* idris_sdl2_init(int width, int height) {
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
     fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
-    //return NULL;
-    SDL_Quit();
+//return NULL;
     exit(1);
   }
 
   SDL_Window *window = SDL_CreateWindow(
-    "My Game Window",
+    "sdl2",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     width, height,
@@ -21,8 +18,7 @@ SDL_Renderer* graphicsInit(int width, int height) {
   );
   if (window == NULL) {
     printf("Unable to create window: %s\n", SDL_GetError());
-   // return NULL;
-    SDL_Quit();
+// return NULL;
     exit(1);
   }
 
@@ -32,18 +28,21 @@ SDL_Renderer* graphicsInit(int width, int height) {
   if (renderer == NULL) {
     SDL_DestroyWindow(window);
     fprintf(stderr, "Unable to create renderer: %s\n", SDL_GetError());
-    SDL_Quit();
     exit(1);
   }
+
+  if (SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND) != 0) {
+    fprintf(stderr, "SDL_BlendMode failed: %s\n", SDL_GetError());
+    exit(1);
+  };
 
   return renderer;
 }
 
-void filledRect(void *r_in,
+void filledRect(SDL_Renderer* renderer,
                 int x, int y, int w, int h,
                 int r, int g, int b, int a)
 {
-    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
     int rc1 = SDL_SetRenderDrawColor(renderer, r, g, b, a);
     if (rc1 != 0) {
       fprintf(stderr, "SDL_SetRenderDrawColor failed: %s\n", SDL_GetError());
@@ -57,31 +56,18 @@ void filledRect(void *r_in,
     }
 }
 
-void filledEllipse(void* r_in,
+void filledEllipse(SDL_Renderer* renderer,
                    int x, int y, int rx, int ry,
                    int r, int g, int b, int a)
 {
-    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
     filledEllipseRGBA(renderer, x, y, rx, ry, r, g, b, a);
 }
 
-void drawLine(void* r_in,
+void drawLine(SDL_Renderer* renderer,
               int x, int y, int ex, int ey,
               int r, int g, int b, int a)
 {
-    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
     lineRGBA(renderer, x, y, ex, ey, r, g, b, a);
-}
-
-void flipBuffers(void* r_in) {
-    SDL_Renderer* renderer = (SDL_Renderer*)r_in;
-    SDL_RenderPresent(renderer);
-}
-
-void* startSDL(int w, int h) {
-    SDL_Renderer *renderer = graphicsInit(w, h);
-    //return (void*)renderer;
-    return renderer;
 }
 
 VAL MOTION(VM* vm, int x, int y, int relx, int rely) {
@@ -300,24 +286,20 @@ void* pollEvent(VM* vm) {
     return idris_event;
 }
 
-/*
-int main(int argc, char* argv[]) {
-    SDL_Surface *s = graphicsInit(640,480);
-    SDL_Event event;
-    filledRect(s, 100, 100, 50, 50, 255, 0, 0, 128);
-    flipBuffers(s);
-    int done = 0;
-    while(!done) {
-        int r = SDL_PollEvent(&event);
-        if (r != 0) {
-            switch(event.type) {
-            case SDL_KEYUP:
-                done = 1;
-                break;
-            default:
-                break;
-            }
+// FIXME: Remove this when events work.
+int pollEventsForQuit() {
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+      case SDL_QUIT:
+        return 1;
+        break;
+      case SDL_KEYDOWN:
+        if (e.key.keysym.sym == SDLK_ESCAPE) {
+          return 1;
         }
+        break;
     }
+  }
+  return 0;
 }
-*/

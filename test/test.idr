@@ -4,7 +4,7 @@ import Graphics.SDL2
 
 main : IO ()
 main = do renderer <- SDL2.init 640 480
-          flipBuffers renderer
+          renderPresent renderer
 
           eventLoop renderer 0 320 200 0 0
   where eventLoop : Renderer -> Integer -> Int -> Int -> Int -> Int -> IO ()
@@ -16,7 +16,7 @@ main = do renderer <- SDL2.init 640 480
                              filledRect r 100 100 50 50 255 0 0 128
                              filledEllipse r x y 20 20 0 255 0 128
                              when ((f `mod` 100) == 0) $ print f
-                             flipBuffers r
+                             renderPresent r
                              processEvent r (f+1) (x+mx) (y+my) mx my event
 
         processEvent r f x y mx my (Just (KeyDown KeyLeftArrow))

@@ -1,9 +1,17 @@
 .PHONY: all
-all: etest simple test
+all: bitmap etest hello simple test
+
+.PHONY: bitmap
+bitmap:
+	idris --build bitmap.ipkg
 
 .PHONY: etest
 etest:
 	idris --build etest.ipkg
+
+.PHONY: hello
+hello:
+	idris --build hello.ipkg
 
 .PHONY: simple
 simple:

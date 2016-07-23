@@ -44,9 +44,9 @@ Handler Sdl IO where
      handle () (Initialise x y) k = do srf <- SDL2.init x y; k () srf
      handle s Quit k = do SDL2.quit; k () ()
 
-     handle s Flip k = do flipBuffers s; k () s
-     handle s Poll k = do x <- pollEvent; k x s
-     handle s (WithRenderer f) k = do r <- f s; k r s 
+     handle r Flip k = do renderPresent r; k () r
+     handle r Poll k = do x <- pollEvent; k x r
+     handle r (WithRenderer f) k = do res <- f r; k res r
 
 SDL : Type -> EFFECT
 SDL res = MkEff res Sdl
