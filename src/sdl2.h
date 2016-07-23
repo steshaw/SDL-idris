@@ -1,5 +1,5 @@
-#ifndef __SDLRUN_H
-#define __SDLRUN_H
+#ifndef SDL2_H__
+#define SDL2_H__
 
 #include <SDL2/SDL.h>
 #include <idris_rts.h>

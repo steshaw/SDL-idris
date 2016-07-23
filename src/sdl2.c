@@ -1,4 +1,4 @@
-#include "sdlrun.h"
+#include "sdl2.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
 
 #include <stdio.h>

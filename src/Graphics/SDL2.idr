@@ -2,8 +2,8 @@ module Graphics.SDL2
 
 import Graphics.Config
 
-%include C "sdlrun.h"
-%link C    "sdlrun.o"
+%include C "sdl2.h"
+%link C    "sdl2.o"
 
 -- Set up a window
 
@@ -56,7 +56,7 @@ drawLine (MkRenderer ptr) x y ex ey r g b a
             Int -> Int -> Int -> Int -> IO ()) ptr x y ex ey r g b a
 
 -- TODO: More keys still to add... careful to do the right mappings in
--- KEY in sdlrun.c
+-- KEY in sdl2.c
 
 public export
 data Key = KeyUpArrow

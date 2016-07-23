@@ -9,5 +9,5 @@ modules = Graphics.SDL2
 
 makefile = MakefileSDLC
 
-objs = sdlrun.o
-     , sdlrun.h
+objs = sdl2.o
+     , sdl2.h
