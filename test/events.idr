@@ -28,7 +28,7 @@ main = (do
           Just (SDL2.AppQuit) => do
             putStrLn "AppQuit"
             pure ()
-          Just (SDL2.KeyDown SDL2.KeyEscape) => do
-            putStrLn ("KeyDown KeyEscape")
+          Just (SDL2.KeyDown SDL2.KeyEsc) => do
+            putStrLn ("KeyDown KeyEsc")
             pure ()
           _ => do loop renderer
