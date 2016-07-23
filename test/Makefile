@@ -1,5 +1,5 @@
 .PHONY: all
-all: bitmap etest hello simple test
+all: bitmap etest events hello test
 
 .PHONY: bitmap
 bitmap:
@@ -9,13 +9,13 @@ bitmap:
 etest:
 	-idris --build etest.ipkg
 
-.PHONY: hello
-hello:
-	idris --build hello.ipkg
-
 .PHONY: events
 events:
 	idris --build events.ipkg
+
+.PHONY: hello
+hello:
+	idris --build hello.ipkg
 
 .PHONY: test
 test:
