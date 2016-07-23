@@ -25,6 +25,10 @@ main = (do
         SDL2.renderPresent renderer
         event <- SDL2.pollEvent
         case event of
-          Just (KeyDown KeyEscape) => pure ()
-          Just (AppQuit) => pure ()
-          _ => loop renderer
+          Just (SDL2.AppQuit) => do
+            putStrLn "AppQuit"
+            pure ()
+          Just (SDL2.KeyDown SDL2.KeyEscape) => do
+            putStrLn ("KeyDown KeyEscape")
+            pure ()
+          _ => do loop renderer
