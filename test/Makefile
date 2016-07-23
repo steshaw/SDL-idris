@@ -7,15 +7,15 @@ bitmap:
 
 .PHONY: etest
 etest:
-	idris --build etest.ipkg
+	-idris --build etest.ipkg
 
 .PHONY: hello
 hello:
 	idris --build hello.ipkg
 
-.PHONY: simple
-simple:
-	idris --build simple.ipkg
+.PHONY: events
+events:
+	idris --build events.ipkg
 
 .PHONY: test
 test:

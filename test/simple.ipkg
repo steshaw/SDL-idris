@@ -1,6 +1,0 @@
-package simple
-
-pkgs = sdl2, effects
-
-executable = simple
-main = simple
